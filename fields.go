@@ -28,7 +28,36 @@ func (e *ErrorWithFields) LogFields() map[string]interface{} {
 	return e.fields
 }
 
-func GetErrorWithFields(err error) *ErrorWithFields {
+func Cause(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	return MustBase(err).Unwrap()
+}
+
+func MustBase(err error) *ErrorWithFields {
+	return mustBase(err, 1)
+}
+
+func Wrap(err error) error {
+	fe := base(err)
+	if fe == nil {
+		f := &ErrorWithFields{
+			error:  err,
+			stack:  callers(1),
+			fields: F{},
+		}
+		return f
+	}
+	return err
+}
+
+func base(err error) *ErrorWithFields {
+	if err == nil {
+		return nil
+	}
+
 	unwrapErr := err
 	for unwrapErr != nil {
 		if e, ok := unwrapErr.(*ErrorWithFields); ok {
@@ -39,16 +68,8 @@ func GetErrorWithFields(err error) *ErrorWithFields {
 	return nil
 }
 
-func Wrap(err error) *ErrorWithFields {
-	return wrap(err, 1)
-}
-
-func wrap(err error, skip int) *ErrorWithFields {
-	if err == nil {
-		return nil
-	}
-
-	fe := GetErrorWithFields(err)
+func mustBase(err error, skip int) *ErrorWithFields {
+	fe := base(err)
 	if fe == nil {
 		f := &ErrorWithFields{
 			error:  err,
@@ -61,7 +82,11 @@ func wrap(err error, skip int) *ErrorWithFields {
 }
 
 func AddField(err error, key string, value interface{}) *ErrorWithFields {
-	f := wrap(err, 1)
+	if err == nil {
+		return nil
+	}
+
+	f := mustBase(err, 1)
 	return f.AddField(key, value)
 }
 
@@ -76,6 +101,10 @@ func (e *ErrorWithFields) AddField(key string, value interface{}) *ErrorWithFiel
 }
 
 func AddFieldf(err error, key, valueFormat string, args ...interface{}) *ErrorWithFields {
+	if err == nil {
+		return nil
+	}
+
 	return AddField(err, key, fmt.Sprintf(valueFormat, args...))
 }
 
@@ -84,7 +113,11 @@ func (e *ErrorWithFields) AddFieldf(key, valueFormat string, args ...interface{}
 }
 
 func AddFields(err error, fields F) *ErrorWithFields {
-	f := wrap(err, 1)
+	if err == nil {
+		return nil
+	}
+
+	f := mustBase(err, 1)
 	for key, value := range fields {
 		f.AddField(key, value)
 	}

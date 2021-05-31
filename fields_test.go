@@ -12,9 +12,9 @@ import (
 func TestError(t *testing.T) {
 	err := Call()
 	fmt.Printf("%+v\n", err)
-	fmt.Println(errorc.Wrap(err).LogFields())
+	fmt.Println(errorc.MustBase(err).LogFields())
 
-	a, ok := errorc.GetErrorWithFields(err).Unwrap().(IA)
+	a, ok := errorc.MustBase(err).Unwrap().(IA)
 	if !ok {
 		t.Error("not IA")
 		return
