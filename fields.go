@@ -40,6 +40,14 @@ func MustBase(err error) *ErrorWithFields {
 	return mustBase(err, 1)
 }
 
+func Newf(format string, a ...interface{}) error {
+	return &ErrorWithFields{
+		error:  fmt.Errorf(format, a...),
+		stack:  callers(1),
+		fields: F{},
+	}
+}
+
 func Wrap(err error) error {
 	fe := base(err)
 	if fe == nil {
